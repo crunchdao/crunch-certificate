@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Message</title>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Wallet Sign</h1>
+        <button id="button" onclick="connectAndSign()" disabled>Connect & Sign</button>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        async function connectAndSign() {
+            const button = document.getElementById("button");
+            const statusDiv = document.getElementById("status");
+
+            try {
+                button.disabled = true;
+
+                if (!window.solana) {
+                    statusDiv.textContent = "Wallet not found!";
+                    return;
+                }
+
+                statusDiv.textContent = "Connecting...";
+
+                const response = await window.solana.connect();
+                console.log("Connected to wallet:", response.publicKey.toString());
+
+                const encodedMessage = Uint8Array.from("%MESSAGE_FROM_PYTHON%");
+
+                statusDiv.textContent = "Please sign the message...";
+
+                const signedMessage = await window.solana.signMessage(encodedMessage, "utf8");
+
+                console.log("Signature:", signedMessage.signature);
+                console.log("Public Key:", signedMessage.publicKey.toString());
+
+                statusDiv.textContent = "Signed! You can close the page.";
+
+                const url = new URL("/result", window.location);
+                url.searchParams.append("signature", signedMessage.signature.toBase64());
+                url.searchParams.append("publicKey", signedMessage.publicKey.toString());
+
+                await fetch(url.toString());
+
+                window.close();
+            } catch (error) {
+                console.error("Error:", error);
+                statusDiv.textContent = "Error: " + error.message;
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        window.addEventListener("load", connectAndSign);
+    </script>
+</body>
+
+</html>
