@@ -15,10 +15,10 @@ This Python library is designed for the [CrunchDAO Platform](https://hub.crunchd
 
 # Installation
 
+Use [pip](https://pypi.org/project/crunch-certificate/) to install the `crunch-certificate` package.
+
 ```bash
-git clone git@github.com:crunchdao/crunch-certificate.git
-cd crunch-certificate
-make install
+pip install --upgrade crunch-certificate
 ```
 
 # Usage
