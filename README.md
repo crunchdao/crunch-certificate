@@ -40,7 +40,7 @@ crunch-certificate tls generate
 You will be prompted to sign the message using your browser extension. A web page with instructions will open.
 
 ```bash
-crunch-certificate sign
+crunch-certificate sign --hotkey my-hot-key --model-id 42
 ```
 
 > [!TIP]

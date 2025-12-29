@@ -137,9 +137,14 @@ def tls_generate(
 
 @cli.command(name="sign")
 @click.option("--tls-cert-path", type=click.Path(dir_okay=False, readable=True, exists=True), default="tls.crt")
+@click.option("--hotkey", type=str, required=True)
+@click.option("--model-id", type=str, required=True)
+@click.option("--tls-cert-path", type=click.Path(dir_okay=False, readable=True, exists=True), default="tls.crt")
 @click.option("--wallet-path", type=click.Path(dir_okay=False, readable=True, exists=True), required=False)
 def sign_command(
     tls_cert_path: str,
+    hotkey: str,
+    model_id: str,
     wallet_path: Optional[str],
 ):
     with open(tls_cert_path) as fd:
@@ -148,8 +153,9 @@ def sign_command(
 
     # TODO Use real values
     message = sign.create_message(
-        cert_pub=str(tls_cert.public_key()),
-        hotkey="abc",
+        cert_pub=certificate.get_public_key_as_string(tls_cert),
+        hotkey=hotkey,
+        model_id=model_id,
     )
 
     if wallet_path is not None:
