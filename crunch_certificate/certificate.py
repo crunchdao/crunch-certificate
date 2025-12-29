@@ -1,8 +1,10 @@
+from base64 import b64encode
 from datetime import datetime, timedelta, timezone
 from typing import List, Tuple
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID, ObjectIdentifier
 
 from crunch_certificate.private_key import PrivateKey
@@ -150,3 +152,14 @@ def generate_tls(
         tls_priv,
         tls_cert,
     )
+
+
+def get_public_key_as_string(
+    certificate: x509.Certificate,
+) -> str:
+    bytes = certificate.public_key().public_bytes(
+        encoding=Encoding.DER,
+        format=PublicFormat.SubjectPublicKeyInfo,
+    )
+
+    return b64encode(bytes).decode("ascii")
