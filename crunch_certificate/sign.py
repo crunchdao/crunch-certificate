@@ -94,7 +94,7 @@ class BrowserExtensionSigner(Signer):
                         running = False
                         self.send_html("OK")
                     else:
-                        content = html_template.replace('"%MESSAGE_FROM_PYTHON%"', str([int(x) for x in "abc".encode()]))
+                        content = html_template.replace('"%MESSAGE_FROM_PYTHON%"', str([int(x) for x in message]))
                         self.send_html(content)
                 except:
                     traceback.print_exc()
