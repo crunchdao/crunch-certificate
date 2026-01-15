@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Literal, Optional, get_args
 
@@ -120,7 +121,7 @@ def tls_generate(
         ca_cert=ca_cert,
         common_name=common_name,
         is_client=is_client,
-        is_server=is_server,
+        is_server=is_server
     )
 
     tls_key_pem = pem.dumps(private_key=tls_key)
@@ -138,14 +139,16 @@ def tls_generate(
 @cli.command(name="sign")
 @click.option("--tls-cert-path", type=click.Path(dir_okay=False, readable=True, exists=True), default="tls.crt")
 @click.option("--hotkey", type=str, required=True)
-@click.option("--model-id", type=str, required=True)
+@click.option("--model-id", type=str, required=False)
 @click.option("--tls-cert-path", type=click.Path(dir_okay=False, readable=True, exists=True), default="tls.crt")
 @click.option("--wallet-path", type=click.Path(dir_okay=False, readable=True, exists=True), required=False)
+@click.option("--output", type=click.Path(dir_okay=False, writable=True), required=False, help="Save signed message to a specified file", default='coordinator_msg.json')
 def sign_command(
     tls_cert_path: str,
     hotkey: str,
     model_id: str,
     wallet_path: Optional[str],
+    output: Optional[str],
 ):
     with open(tls_cert_path) as fd:
         tls_cert = pem.loads_certificate(fd.read())
@@ -165,6 +168,7 @@ def sign_command(
     
     signed_message = signer.sign_json(message)
 
-    print(f"message_b64       : {signed_message.message_b64}")
-    print(f"wallet_pubkey_b58 : {signed_message.wallet_pubkey_b58}")
-    print(f"signature_b64     : {signed_message.signature_b64}")
+    if output:
+        with open(output, "w") as fd:
+            json.dump(signed_message.to_dict(), fd, indent=2)
+        click.echo(f"Signed message saved to: {output}")

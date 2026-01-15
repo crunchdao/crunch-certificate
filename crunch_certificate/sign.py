@@ -165,11 +165,12 @@ def create_message(
     *,
     cert_pub: str,
     hotkey: str,
-    model_id: str,
+    model_id: str | None = None,
 ) -> OrderedDictType[str, str]:
     message: OrderedDictType[str, str] = OrderedDict()
     message["cert_pub"] = cert_pub
     message["hotkey"] = hotkey
-    message["model_id"] = model_id
+    if model_id:
+        message["model_id"] = model_id
 
     return message
