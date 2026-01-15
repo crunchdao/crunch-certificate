@@ -1,6 +1,6 @@
 from base64 import b64encode
 from datetime import datetime, timedelta, timezone
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
@@ -100,6 +100,7 @@ def generate_tls(
     is_client: bool = True,
     is_server: bool = False,
     days_valid: int = DEFAULT_DAYS_VALID,
+    san_dns: Optional[str] = None,
 ) -> Tuple[
     PrivateKey,
     x509.Certificate,
@@ -134,6 +135,13 @@ def generate_tls(
     if is_client:
         eku_usages.append(ExtendedKeyUsageOID.CLIENT_AUTH)
     if is_server:
+        if not san_dns:
+            raise ValueError("san_dns is required when is_server=True (gRPC validates SAN, not CN).")
+
+        builder = builder.add_extension(
+            x509.SubjectAlternativeName([x509.DNSName(san_dns)]),
+            critical=False,
+        )
         eku_usages.append(ExtendedKeyUsageOID.SERVER_AUTH)
 
     if eku_usages:
