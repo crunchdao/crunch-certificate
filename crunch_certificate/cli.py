@@ -106,8 +106,8 @@ def tls_generate(
         is_client = True
         is_server = False
     elif target == "cruncher":
-        is_client = True
-        is_server = False
+        is_client = False
+        is_server = True
     else:
         is_client = True
         is_server = True
