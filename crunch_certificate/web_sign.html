@@ -5,11 +5,130 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Message</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            background: #141414;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 48px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        h1 {
+            color: #ffffff;
+            margin-bottom: 8px;
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        #button {
+            background: #ffffff;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 8px;
+            padding: 16px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-bottom: 20px;
+            letter-spacing: 0.3px;
+        }
+
+        #button:hover:not(:disabled) {
+            background: #e6e6e6;
+            transform: translateY(-1px);
+        }
+
+        #button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        #button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #status {
+            color: #aaa;
+            font-size: 14px;
+            min-height: 20px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        #status:not(:empty) {
+            padding: 16px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+        }
+
+        .logo {
+            width: fit-content;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .logo > img {
+            width: 64px;
+            height: 64px;
+            border-radius: 6px;
+            object-fit: contain;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 32px 24px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
 </head>
 
 <body>
     <div class="container">
+        <div class="logo">
+            <img src="data:image/webp;base64,UklGRroEAABXRUJQVlA4WAoAAAAwAAAAXwAAXwAASUNDUMgBAAAAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADZBTFBIuAAAAAF3YJBt5OAfwdXgEf4jIga/aZoDINXWtqx6Fm5D928IHbwAGUigAVhEYO7QwnVuBdyufV8J/ClwI/o/AbhNdaX6+KZqx+OiVJyRBwVFq78j/ngWmpu5Io4CEH9MCw0wUdR+4MxVglDkmgqbac8WOLGlv9kav2wjybZR/16UbJtfttEPW+PEll6zBctsZsGmwRdXFphy2QDxx7TQAJgzRQFA/PEsNDfI8Lhxv0OyCeNxqic/t6nacQtWUDggDAIAALAOAJ0BKmAAYAA+USKQRSOiIZR5nRQ4BQS0gAtp/oBMyfyI/G7nB11d4GGC/AOZqzSvkX+K9gf+N/2Xq5+jT+jRj2PuXUDKZqtWoqnvjEtJtVL9x6h7hPwIb2nz26fq17S8xYO4tgGDVwOtypUMPg5T5YA7hlowmnC6oiAkUAD+/HURm8XcvM/sTcF85oHOybyHf7DkjLff3zGahX2Xki/BzEhHddUYnrf4lhPnvAzWM0aTrQNtas2F/6d/BBTsG5nk/idK2hL/g1uS/pWD6gr+Hi353ZCrIQ04E1+Xj7P2dRRqROOna86haONq5itiVYfGP4rjZ5k+MWKsNfJZJk+UpcAPtrIrojp8l/+viSIBv57dC7E+zJ4y/gOL+AXM36PmdIuM2bqHgvu3VZ5sDy0NKggfnKY819J+2ERQkL/OXpf5MMce+ssFjvRufvhKbGaKjlgkv3mVX1S5Vdjw2RDv+XFqP3F/kvnnGUPxtYarrBclD/EU7rLUXWWeNO5K1sPocMU8qMCgmiJcrNQw4a9/RozWMS9i2P1BqamTbAqps6sPmLA3vfL9Os6xoS+M9rCdmQvH0TNmR89j350H7+FYESCSt8Cn/nZQ3WBMSaLkeRPn0AoyH+Gh3MTf+MHcWaKSBKAjehwL7LfMVfcvxe2/kJ2CFvAiZGBaPU76TceklR4Ssi/egPMmAAAA"
+                alt="CrunchDAO" class="logo-img">
+        </div>
         <h1>Wallet Sign</h1>
+        <div class="subtitle">Connect your wallet to begin</div>
         <button id="button" onclick="connectAndSign()" disabled>Connect & Sign</button>
         <div id="status"></div>
     </div>
