@@ -131,12 +131,10 @@ def tls_generate(
     overwrite: int,
 ):
     if os.path.exists(key_path) and not overwrite:
-        click.echo(f"{key_path}: file already exists (bypass using --overwrite)", err=True)
-        raise click.Abort()
+        click.confirm(f"{key_path}: file already exists, overwrite?", default=False, abort=True)
 
     if os.path.exists(cert_path) and not overwrite:
-        click.echo(f"{cert_path}: file already exists (bypass using --overwrite)", err=True)
-        raise click.Abort()
+        click.confirm(f"{cert_path}: file already exists, overwrite?", default=False, abort=True)
 
     if bool(ca_key_path) ^ bool(ca_cert_path):
         click.echo(f"{cert_path}: both `--ca-key-path ca.key` and `--ca-cert-path ca.crt` must be used at the time", err=True)
@@ -170,6 +168,7 @@ def tls_generate(
         assert False
 
     (
+        ca_cert,
         tls_key,
         tls_cert,
     ) = certificate.generate_tls(
@@ -180,15 +179,17 @@ def tls_generate(
         is_server=is_server,
     )
 
-    tls_key_pem = pem.dumps(private_key=tls_key)
-    tls_cert_pem = pem.dumps(certificate=tls_cert)
+    if isinstance(certificate_issuer, certificate.RemoteTlsCertificateIssuer):
+        with open(key_path, "w") as fd:
+            fd.write(pem.dumps(certificate=ca_cert))
+        click.echo(f"ca: {ca_cert_path}: certificate key")
 
     with open(key_path, "w") as fd:
-        fd.write(tls_key_pem)
+        fd.write(pem.dumps(private_key=tls_key))
     click.echo(f"tls: {key_path}: saved key")
 
     with open(cert_path, "w") as fd:
-        fd.write(tls_cert_pem)
+        fd.write(pem.dumps(certificate=tls_cert))
     click.echo(f"tls: {cert_path}: saved certificate")
 
 
