@@ -107,6 +107,7 @@ def tls_group():
 
 
 TargetProfileString = Literal["coordinator", "cruncher"]
+target_profile_args = get_args(TargetProfileString)
 
 
 @tls_group.command(name="generate")
@@ -114,7 +115,7 @@ TargetProfileString = Literal["coordinator", "cruncher"]
 @click.option("--ca-cert-path", type=click.Path(dir_okay=False, readable=True, exists=True), required=False)
 @click.option("--common-name", type=str, required=True, prompt=True)
 @click.option("--san-dns", type=str, required=False)
-@click.option("--target", type=click.Choice(get_args(TargetProfileString)), required=False)
+@click.option("--target", type=click.Choice(target_profile_args), default=target_profile_args[0])
 @click.option("--key-path", type=click.Path(dir_okay=False, writable=True), default="tls.key", prompt=True)
 @click.option("--cert-path", type=click.Path(dir_okay=False, writable=True), default="tls.crt", prompt=True)
 @click.option("--overwrite", is_flag=True)
@@ -165,8 +166,7 @@ def tls_generate(
         is_client = False
         is_server = True
     else:
-        is_client = True
-        is_server = True
+        assert False
 
     (
         tls_key,
