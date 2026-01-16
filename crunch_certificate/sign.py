@@ -136,8 +136,6 @@ class BrowserExtensionSigner(Signer):
                     elif parsed_path.path == "/result":
                         self.do_GET_result(
                             signature=self._get_first(params, "signature"),
-                            hot_key=self._get_first(params, "hotKey"),
-                            public_key=self._get_first(params, "publicKey"),
                         )
                     else:
                         html = importlib.resources.read_text(__package__, "web_sign.html")  # type: ignore
@@ -184,18 +182,16 @@ class BrowserExtensionSigner(Signer):
             def do_GET_result(
                 self,
                 signature: Optional[str],
-                hot_key: Optional[str],
-                public_key: Optional[str],
             ):
-                if signature is None or hot_key is None or public_key is None:
+                if signature is None:
                     return self.send_json(
                         {
-                            "message": "Missing ?signature or ?hotKey or ?publicKey query parameter"
+                            "message": "Missing ?signature query parameter"
                         },
                         status=HTTPStatus.BAD_REQUEST,
                     )
 
-                nonlocal running, got_public_key, got_signature
+                nonlocal running, got_signature
                 running = False
                 got_signature = signature
 
