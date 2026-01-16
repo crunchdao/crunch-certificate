@@ -290,7 +290,7 @@ def enroll(
         hot_key_provider=hot_key_provider,
     )
 
-    with ZipFile(output_file_path, mode="x") as zip:
+    with ZipFile(output_file_path, mode="w") as zip:
         zip.writestr("ca.crt", pem.dumps(certificate=ca_cert))
         zip.writestr("tls.key", pem.dumps(private_key=tls_key))
         zip.writestr("tls.crt", pem.dumps(certificate=tls_cert))
