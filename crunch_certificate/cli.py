@@ -154,37 +154,39 @@ def tls_generate(
 
 @cli.command(name="sign")
 @click.option("--tls-cert-path", type=click.Path(dir_okay=False, readable=True, exists=True), default="tls.crt")
-@click.option("--hotkey", type=str, required=True)
+@click.option("--hot-key", type=str, required=False)
 @click.option("--model-id", type=str, required=False)
 @click.option("--tls-cert-path", type=click.Path(dir_okay=False, readable=True, exists=True), default="tls.crt")
 @click.option("--wallet-path", type=click.Path(dir_okay=False, readable=True, exists=True), required=False)
-@click.option("--output", type=click.Path(dir_okay=False, writable=True), required=False, help="Save signed message to a specified file", default='coordinator_msg.json')
+@click.option("--output", "output_file_path", type=click.Path(dir_okay=False, writable=True), required=False)
 def sign_command(
     tls_cert_path: str,
-    hotkey: str,
+    hot_key: Optional[str],
     model_id: str,
     wallet_path: Optional[str],
-    output: Optional[str],
+    output_file_path: Optional[str],
 ):
     with open(tls_cert_path) as fd:
         tls_cert = pem.loads_certificate(fd.read())
     click.echo(f"tls: {tls_cert_path}: loaded certificate")
 
-    # TODO Use real values
-    message = sign.create_message(
-        cert_pub=certificate.get_public_key_as_string(tls_cert),
-        hotkey=hotkey,
-        model_id=model_id,
-    )
+    if hot_key is not None:
+        hot_key_provider = sign.StaticHotKeyProvider(hot_key)
+    else:
+        hot_key_provider = sign.CpiHotKeyProvider("https://cpi.crunchdao.io/")
 
     if wallet_path is not None:
         signer = sign.KeypairSigner.load(wallet_path)
     else:
         signer = sign.BrowserExtensionSigner()
 
-    signed_message = signer.sign_json(message)
+    signed_message = signer.sign(
+        cert_pub=certificate.get_public_key_as_string(tls_cert),
+        hot_key_provider=hot_key_provider,
+        model_id=model_id,
+    )
 
-    if output:
-        with open(output, "w") as fd:
+    if output_file_path:
+        with open(output_file_path, "w") as fd:
             json.dump(signed_message.to_dict(), fd, indent=2)
-        click.echo(f"Signed message saved to: {output}")
+        click.echo(f"signed message: saved to {output_file_path}")

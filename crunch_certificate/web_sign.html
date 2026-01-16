@@ -30,9 +30,15 @@
                 statusDiv.textContent = "Connecting...";
 
                 const response = await window.solana.connect();
-                console.log("Connected to wallet:", response.publicKey.toString());
+                const publicKey = response.publicKey.toString();
+                console.log("Connected to wallet:", publicKey);
 
-                const encodedMessage = Uint8Array.from("%MESSAGE_FROM_PYTHON%");
+                const {
+                    message,
+                    hotKey,
+                } = await fetchMessage(publicKey);
+
+                const encodedMessage = Uint8Array.from(message);
 
                 statusDiv.textContent = "Please sign the message...";
 
@@ -46,6 +52,7 @@
                 const url = new URL("/result", window.location);
                 url.searchParams.append("signature", signedMessage.signature.toBase64());
                 url.searchParams.append("publicKey", signedMessage.publicKey.toString());
+                url.searchParams.append("hotKey", hotKey);
 
                 await fetch(url.toString());
 
@@ -56,6 +63,24 @@
             } finally {
                 button.disabled = false;
             }
+        }
+
+        async function fetchMessage(walletPublicKey) {
+            const url = new URL("/message", window.location);
+            url.searchParams.append("publicKey", walletPublicKey);
+
+            const response = await fetch(url);
+            const body = await response.json();
+
+            if (!response.ok) {
+                console.log({ body })
+                throw new Error(body.message || `Failed to get message: ${response.status}`);
+            }
+
+            return {
+                message: body.message,
+                hotKey: body.hotKey,
+            };
         }
 
         window.addEventListener("load", connectAndSign);
