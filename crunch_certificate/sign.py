@@ -292,7 +292,7 @@ def create_message_as_bytes(
     message: OrderedDictType[str, str] = OrderedDict()
 
     message["cert_pub"] = cert_pub
-    message["hot_key"] = hot_key
+    message["hotkey"] = hot_key
 
     if model_id is not None:
         message["model_id"] = model_id
