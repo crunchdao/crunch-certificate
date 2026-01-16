@@ -235,3 +235,79 @@ def sign_command(
         with open(output_file_path, "w") as fd:
             json.dump(signed_message.to_dict(), fd, indent=2)
         click.echo(f"signed message: saved to {output_file_path}")
+
+
+@cli.command()
+@click.option("--common-name", type=str, required=True, prompt=True)
+@click.option("--key-path", type=click.Path(dir_okay=False, writable=True), default="tls.key", prompt=True)
+@click.option("--cert-path", type=click.Path(dir_okay=False, writable=True), default="tls.crt", prompt=True)
+@click.option("--overwrite", is_flag=True)
+@click.option("--hot-key", type=str, required=False)
+@click.option("--wallet-path", type=click.Path(dir_okay=False, readable=True, exists=True), required=False)
+@click.option("--output", "output_file_path", type=click.Path(dir_okay=False, writable=True), default="coordinator_msg.json")
+def enroll(
+    common_name: str,
+    key_path: str,
+    cert_path: str,
+    overwrite: int,
+    hot_key: Optional[str],
+    wallet_path: Optional[str],
+    output_file_path: str,
+):
+    if os.path.exists(key_path) and not overwrite:
+        click.confirm(f"{key_path}: file already exists, overwrite?", abort=True, default=False)
+
+    if os.path.exists(cert_path) and not overwrite:
+        click.confirm(f"{cert_path}: file already exists, overwrite?", abort=True, default=False)
+
+    (
+        tls_key,
+        tls_cert,
+    ) = certificate.generate_tls(
+        certificate_issuer=certificate.RemoteTlsCertificateIssuer(
+            api_base_url=the_crunch_api_base_url,
+        ),
+        common_name=common_name,
+
+        # coordinator
+        is_client=True,
+        is_server=False,
+    )
+
+    tls_key_pem = pem.dumps(private_key=tls_key)
+    tls_cert_pem = pem.dumps(certificate=tls_cert)
+
+    with open(key_path, "w") as fd:
+        fd.write(tls_key_pem)
+    click.echo(f"tls: {key_path}: saved key")
+
+    with open(cert_path, "w") as fd:
+        fd.write(tls_cert_pem)
+    click.echo(f"tls: {cert_path}: saved certificate")
+
+    if hot_key is not None:
+        hot_key_provider = sign.StaticHotKeyProvider(
+            value=hot_key,
+        )
+    else:
+        hot_key_provider = sign.CpiHotKeyProvider(
+            api_base_url=the_cpi_api_base_url,
+        )
+
+    if wallet_path is not None:
+        signer = sign.KeypairSigner.load(
+            wallet_path=wallet_path,
+        )
+    else:
+        signer = sign.BrowserExtensionSigner()
+
+    signed_message = signer.sign(
+        cert_pub=certificate.get_public_key_as_string(tls_cert),
+        hot_key_provider=hot_key_provider,
+    )
+
+    with open(output_file_path, "w") as fd:
+        json.dump(signed_message.to_dict(), fd, indent=2)
+    click.echo(f"signed message: saved to {output_file_path}")
+
+    print(json.dumps(signed_message.to_dict(), indent=4))
