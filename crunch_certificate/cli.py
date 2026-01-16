@@ -5,15 +5,54 @@ from typing import Literal, Optional, get_args
 import click
 
 import crunch_certificate.certificate as certificate
+import crunch_certificate.constants as constants
 import crunch_certificate.pem as pem
 import crunch_certificate.sign as sign
 from crunch_certificate.__version__ import __version__
 
+ENVIRONMENT_PRODUCTION = "production"
+ENVIRONMENT_STAGING = "staging"
+ENVIRONMENT_DEVELOPMENT = "development"
+
+ENVIRONMENT_ALIASES = {
+    "prod": ENVIRONMENT_PRODUCTION,
+    "test": ENVIRONMENT_STAGING,
+    "dev": ENVIRONMENT_DEVELOPMENT,
+    "local": ENVIRONMENT_DEVELOPMENT,
+}
+
+ENVIRONMENTS = {
+    ENVIRONMENT_PRODUCTION: (constants.CRUNCH_API_BASE_URL_PRODUCTION, constants.CPI_API_BASE_URL_PRODUCTION),
+    ENVIRONMENT_STAGING: (constants.CRUNCH_API_BASE_URL_STAGING, constants.CPI_API_BASE_URL_STAGING),
+    ENVIRONMENT_DEVELOPMENT: (constants.CRUNCH_API_BASE_URL_DEVELOPMENT, constants.CPI_API_BASE_URL_DEVELOPMENT),
+}
+
+
+the_crunch_api_base_url: str = None  # type: ignore
+the_cpi_api_base_url: str = None  # type: ignore
+
 
 @click.group()
+@click.option("--crunch-api-base-url", envvar=constants.CRUNCH_API_BASE_URL_ENV_VAR, default=constants.CRUNCH_API_BASE_URL_PRODUCTION, help="Set the API base url.")
+@click.option("--cpi-api-base-url", envvar=constants.CPI_API_BASE_URL_ENV_VAR, default=constants.CPI_API_BASE_URL_PRODUCTION, help="Set the Web base url.")
+@click.option("--environment", "--env", "environment_name", envvar=constants.ENVIRONMENT_ENV_VAR, help="Connect to another environment.")
 @click.version_option(__version__, package_name="__version__.__title__")
-def cli():
-    pass  # pragma: no cover
+def cli(
+    crunch_api_base_url: str,
+    cpi_api_base_url: str,
+    environment_name: str,
+):
+    global the_crunch_api_base_url, the_cpi_api_base_url
+    the_crunch_api_base_url = crunch_api_base_url
+    the_cpi_api_base_url = cpi_api_base_url
+
+    environment_name = ENVIRONMENT_ALIASES.get(environment_name) or environment_name
+    if environment_name in ENVIRONMENTS:
+        print(f"environment: forcing {environment_name} urls, ignoring ${constants.CRUNCH_API_BASE_URL_ENV_VAR} and ${constants.CPI_API_BASE_URL_ENV_VAR}")
+
+        the_crunch_api_base_url, the_cpi_api_base_url = ENVIRONMENTS[environment_name]
+    elif environment_name:
+        print(f"environment: unknown environment `{environment_name}`, ignoring it")
 
 
 @cli.group(name="ca")
@@ -116,7 +155,7 @@ def tls_generate(
         )
     else:
         certificate_issuer = certificate.RemoteTlsCertificateIssuer(
-            api_base_url="",  # TODO
+            api_base_url=the_crunch_api_base_url,
         )
 
     if target == "coordinator":
@@ -171,12 +210,18 @@ def sign_command(
     click.echo(f"tls: {tls_cert_path}: loaded certificate")
 
     if hot_key is not None:
-        hot_key_provider = sign.StaticHotKeyProvider(hot_key)
+        hot_key_provider = sign.StaticHotKeyProvider(
+            value=hot_key,
+        )
     else:
-        hot_key_provider = sign.CpiHotKeyProvider("https://cpi.crunchdao.io/")
+        hot_key_provider = sign.CpiHotKeyProvider(
+            api_base_url=the_cpi_api_base_url,
+        )
 
     if wallet_path is not None:
-        signer = sign.KeypairSigner.load(wallet_path)
+        signer = sign.KeypairSigner.load(
+            wallet_path=wallet_path,
+        )
     else:
         signer = sign.BrowserExtensionSigner()
 

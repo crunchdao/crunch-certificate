@@ -202,6 +202,7 @@ class RemoteTlsCertificateIssuer(TlsCertificateIssuer):
         san_dns: Optional[str] = None,
         days_valid: int = DEFAULT_DAYS_VALID,
     ) -> Certificate:
+        print(self.api_base_url)
         raise NotImplementedError()
 
 

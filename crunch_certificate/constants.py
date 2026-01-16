@@ -1,0 +1,12 @@
+ENVIRONMENT_ENV_VAR = "CRUNCH_CERTIFICATE_ENVIRONMENT"
+
+CRUNCH_API_BASE_URL_ENV_VAR = "CRUNCH_API_BASE_URL"
+CPI_API_BASE_URL_ENV_VAR = "CPI_API_BASE_URL"
+
+CRUNCH_API_BASE_URL_PRODUCTION = "https://api.hub.crunchdao.com/"
+CRUNCH_API_BASE_URL_STAGING = "https://api.hub.crunchdao.io/"
+CRUNCH_API_BASE_URL_DEVELOPMENT = "http://localhost:8000/"
+
+CPI_API_BASE_URL_PRODUCTION = "https://cpi.crunchdao.com/"
+CPI_API_BASE_URL_STAGING = "https://cpi.crunchdao.io/"
+CPI_API_BASE_URL_DEVELOPMENT = "http://localhost:3000/"
