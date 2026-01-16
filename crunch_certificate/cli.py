@@ -294,7 +294,7 @@ def enroll(
         zip.writestr("ca.crt", pem.dumps(certificate=ca_cert))
         zip.writestr("tls.key", pem.dumps(private_key=tls_key))
         zip.writestr("tls.crt", pem.dumps(certificate=tls_cert))
-        zip.writestr("msg.json", json.dumps(signed_message.to_dict()))
+        zip.writestr("coordinator_msg.json", json.dumps(signed_message.to_dict()))
 
     click.echo(f"signed message: saved to {output_file_path}")
 
