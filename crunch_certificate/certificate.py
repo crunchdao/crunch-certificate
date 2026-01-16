@@ -111,7 +111,10 @@ class TlsCertificateIssuer(ABC):
         is_server: bool = False,
         san_dns: Optional[str] = None,
         days_valid: int = DEFAULT_DAYS_VALID,
-    ) -> Certificate:
+    ) -> Tuple[
+        Certificate,  # ca
+        Certificate,  # tls
+    ]:
         ...
 
 
@@ -134,7 +137,10 @@ class LocalTlsCertificateIssuer(TlsCertificateIssuer):
         is_server: bool = False,
         san_dns: Optional[str] = None,
         days_valid: int = DEFAULT_DAYS_VALID,
-    ) -> Certificate:
+    ) -> Tuple[
+        Certificate,  # ca
+        Certificate,  # tls
+    ]:
         # Subject for this cert
         subject = x509.Name([
             x509.NameAttribute(NameOID.COMMON_NAME, common_name),
@@ -183,7 +189,10 @@ class LocalTlsCertificateIssuer(TlsCertificateIssuer):
             algorithm=hashes.SHA256(),
         )
 
-        return tls_cert
+        return (
+            self.ca_cert,
+            tls_cert,
+        )
 
 
 class RemoteTlsCertificateIssuer(TlsCertificateIssuer):
@@ -203,7 +212,10 @@ class RemoteTlsCertificateIssuer(TlsCertificateIssuer):
         is_server: bool = False,
         san_dns: Optional[str] = None,
         days_valid: int = DEFAULT_DAYS_VALID,
-    ) -> Certificate:
+    ) -> Tuple[
+        Certificate,
+        Certificate,
+    ]:
         response = requests.post(
             url=urljoin(self.api_base_url, "/v1/security-credentials/tls/issue-certificate"),
             json={
@@ -220,9 +232,13 @@ class RemoteTlsCertificateIssuer(TlsCertificateIssuer):
             raise ValueError(f"could not issue certificate: {response.status_code}: {response.text}")
 
         body = response.json()
-        tls_cert_pem_string = body["certificatePemString"]
+        ca_cert_pem_string = body["authorityCertificatePemString"]
+        tls_cert_pem_string = body["tlsCertificatePemString"]
 
-        return pem.loads_certificate(tls_cert_pem_string)
+        return (
+            pem.loads_certificate(ca_cert_pem_string),
+            pem.loads_certificate(tls_cert_pem_string),
+        )
 
 
 def generate_tls(
@@ -234,13 +250,17 @@ def generate_tls(
     is_server: bool = False,
     days_valid: int = DEFAULT_DAYS_VALID,
 ) -> Tuple[
-    PrivateKey,
-    Certificate,
+    Certificate,  # ca cert
+    PrivateKey,  # tls key
+    Certificate,  # tls cert
 ]:
     tls_priv = generate_private_key(type="rsa")
     tls_pub = tls_priv.public_key()
 
-    tls_cert = certificate_issuer.sign(
+    (
+        ca_cert,
+        tls_cert,
+    ) = certificate_issuer.sign(
         tls_pub=tls_pub,
         common_name=common_name,
         is_client=is_client,
@@ -250,6 +270,7 @@ def generate_tls(
     )
 
     return (
+        ca_cert,
         tls_priv,
         tls_cert,
     )
