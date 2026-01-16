@@ -2,7 +2,9 @@ from abc import ABC, abstractmethod
 from base64 import b64encode
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Tuple
+from urllib.parse import urljoin
 
+import requests
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
@@ -202,8 +204,25 @@ class RemoteTlsCertificateIssuer(TlsCertificateIssuer):
         san_dns: Optional[str] = None,
         days_valid: int = DEFAULT_DAYS_VALID,
     ) -> Certificate:
-        print(self.api_base_url)
-        raise NotImplementedError()
+        response = requests.post(
+            url=urljoin(self.api_base_url, "/v1/security-credentials/tls/issue-certificate"),
+            json={
+                "tlsPublicKeyPemString": pem.dumps(public_key=tls_pub),
+                "commonName": common_name,
+                "isClient": is_client,
+                "isServer": is_server,
+                "sanDns": san_dns,
+                "daysValid": days_valid,
+            }
+        )
+
+        if not response.ok:
+            raise ValueError(f"could not issue certificate: {response.status_code}: {response.text}")
+
+        body = response.json()
+        tls_cert_pem_string = body["certificatePemString"]
+
+        return pem.loads_certificate(tls_cert_pem_string)
 
 
 def generate_tls(
