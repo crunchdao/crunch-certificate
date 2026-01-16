@@ -33,9 +33,9 @@ the_cpi_api_base_url: str = None  # type: ignore
 
 
 @click.group()
-@click.option("--crunch-api-base-url", envvar=constants.CRUNCH_API_BASE_URL_ENV_VAR, default=constants.CRUNCH_API_BASE_URL_PRODUCTION, help="Set the API base url.")
-@click.option("--cpi-api-base-url", envvar=constants.CPI_API_BASE_URL_ENV_VAR, default=constants.CPI_API_BASE_URL_PRODUCTION, help="Set the Web base url.")
-@click.option("--environment", "--env", "environment_name", envvar=constants.ENVIRONMENT_ENV_VAR, help="Connect to another environment.")
+@click.option("--crunch-api-base-url", envvar=constants.CRUNCH_API_BASE_URL_ENV_VAR, default=constants.CRUNCH_API_BASE_URL_PRODUCTION, help="Set the CrunchDAO issuer API base url.")
+@click.option("--cpi-api-base-url", envvar=constants.CPI_API_BASE_URL_ENV_VAR, default=constants.CPI_API_BASE_URL_PRODUCTION, help="Set the Blockchain Indexer API base url.")
+@click.option("--environment", "--env", "environment_name", envvar=constants.ENVIRONMENT_ENV_VAR, help=f"Connect to another environment (prod, test, dev).")
 @click.version_option(__version__, package_name="__version__.__title__")
 def cli(
     crunch_api_base_url: str,
