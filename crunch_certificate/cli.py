@@ -1,6 +1,7 @@
 import json
 import os
 from typing import Literal, Optional, get_args
+from zipfile import ZipFile
 
 import click
 
@@ -238,29 +239,23 @@ def sign_command(
 
 
 @cli.command()
-@click.option("--common-name", type=str, required=True, prompt=True, default="coordinator")
-@click.option("--key-path", type=click.Path(dir_okay=False, writable=True), default="tls.key", prompt=True)
-@click.option("--cert-path", type=click.Path(dir_okay=False, writable=True), default="tls.crt", prompt=True)
-@click.option("--overwrite", is_flag=True)
+@click.option("--common-name", type=str, required=True, default="coordinator")
 @click.option("--hot-key", type=str, required=False)
 @click.option("--wallet-path", type=click.Path(dir_okay=False, readable=True, exists=True), required=False)
-@click.option("--output", "output_file_path", type=click.Path(dir_okay=False, writable=True), default="coordinator_msg.json")
+@click.option("-O", "--output", "output_file_path", type=click.Path(dir_okay=False, writable=True), default="issued-certificate.zip")
+@click.option("-f", "--overwrite", is_flag=True)
 def enroll(
     common_name: str,
-    key_path: str,
-    cert_path: str,
     overwrite: int,
     hot_key: Optional[str],
     wallet_path: Optional[str],
     output_file_path: str,
 ):
-    if os.path.exists(key_path) and not overwrite:
-        click.confirm(f"{key_path}: file already exists, overwrite?", abort=True, default=False)
-
-    if os.path.exists(cert_path) and not overwrite:
-        click.confirm(f"{cert_path}: file already exists, overwrite?", abort=True, default=False)
+    if os.path.exists(output_file_path) and not overwrite:
+        click.confirm(f"{output_file_path}: file already exists, overwrite?", abort=True, default=False)
 
     (
+        ca_cert,
         tls_key,
         tls_cert,
     ) = certificate.generate_tls(
@@ -273,17 +268,6 @@ def enroll(
         is_client=True,
         is_server=False,
     )
-
-    tls_key_pem = pem.dumps(private_key=tls_key)
-    tls_cert_pem = pem.dumps(certificate=tls_cert)
-
-    with open(key_path, "w") as fd:
-        fd.write(tls_key_pem)
-    click.echo(f"tls: {key_path}: saved key")
-
-    with open(cert_path, "w") as fd:
-        fd.write(tls_cert_pem)
-    click.echo(f"tls: {cert_path}: saved certificate")
 
     if hot_key is not None:
         hot_key_provider = sign.StaticHotKeyProvider(
@@ -306,8 +290,12 @@ def enroll(
         hot_key_provider=hot_key_provider,
     )
 
-    with open(output_file_path, "w") as fd:
-        json.dump(signed_message.to_dict(), fd, indent=2)
+    with ZipFile(output_file_path, mode="x") as zip:
+        zip.writestr("ca.crt", pem.dumps(certificate=ca_cert))
+        zip.writestr("tls.key", pem.dumps(private_key=tls_key))
+        zip.writestr("tls.crt", pem.dumps(certificate=tls_cert))
+        zip.writestr("msg.json", json.dumps(signed_message.to_dict()))
+
     click.echo(f"signed message: saved to {output_file_path}")
 
     print(json.dumps(signed_message.to_dict(), indent=4))
