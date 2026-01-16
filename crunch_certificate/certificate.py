@@ -213,7 +213,7 @@ class RemoteTlsCertificateIssuer(TlsCertificateIssuer):
                 "isServer": is_server,
                 "sanDns": san_dns,
                 "daysValid": days_valid,
-            }
+            },
         )
 
         if not response.ok:

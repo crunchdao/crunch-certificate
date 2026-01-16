@@ -88,7 +88,8 @@ class CpiHotKeyProvider(HotKeyProvider):
         if not response.ok:
             raise ValueError(f"could not find hot_key: {response.status_code}: {response.text}")
 
-        raise NotImplementedError()
+        body = response.json()
+        return body["hotkey"]
 
 
 class Signer(ABC):
