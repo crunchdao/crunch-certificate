@@ -238,7 +238,7 @@ def sign_command(
 
 
 @cli.command()
-@click.option("--common-name", type=str, required=True, prompt=True)
+@click.option("--common-name", type=str, required=True, prompt=True, default="coordinator")
 @click.option("--key-path", type=click.Path(dir_okay=False, writable=True), default="tls.key", prompt=True)
 @click.option("--cert-path", type=click.Path(dir_okay=False, writable=True), default="tls.crt", prompt=True)
 @click.option("--overwrite", is_flag=True)
