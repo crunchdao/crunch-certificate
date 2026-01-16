@@ -71,17 +71,19 @@ TargetProfileString = Literal["coordinator", "cruncher"]
 
 
 @tls_group.command(name="generate")
-@click.option("--ca-key-path", type=click.Path(dir_okay=False, readable=True, exists=True), default="ca.key")
-@click.option("--ca-cert-path", type=click.Path(dir_okay=False, readable=True, exists=True), default="ca.crt")
+@click.option("--ca-key-path", type=click.Path(dir_okay=False, readable=True, exists=True), required=False)
+@click.option("--ca-cert-path", type=click.Path(dir_okay=False, readable=True, exists=True), required=False)
 @click.option("--common-name", type=str, required=True, prompt=True)
+@click.option("--san-dns", type=str, required=False)
 @click.option("--target", type=click.Choice(get_args(TargetProfileString)), required=False)
 @click.option("--key-path", type=click.Path(dir_okay=False, writable=True), default="tls.key", prompt=True)
 @click.option("--cert-path", type=click.Path(dir_okay=False, writable=True), default="tls.crt", prompt=True)
 @click.option("--overwrite", is_flag=True)
 def tls_generate(
-    ca_key_path: str,
-    ca_cert_path: str,
+    ca_key_path: Optional[str],
+    ca_cert_path: Optional[str],
     common_name: str,
+    san_dns: Optional[str],
     target: Optional[TargetProfileString],
     key_path: str,
     cert_path: str,
@@ -95,13 +97,27 @@ def tls_generate(
         click.echo(f"{cert_path}: file already exists (bypass using --overwrite)", err=True)
         raise click.Abort()
 
-    with open(ca_key_path) as fd:
-        ca_key = pem.loads_private_key(fd.read())
-    click.echo(f"ca: {ca_key_path}: loaded key")
+    if bool(ca_key_path) ^ bool(ca_cert_path):
+        click.echo(f"{cert_path}: both `--ca-key-path ca.key` and `--ca-cert-path ca.crt` must be used at the time", err=True)
+        raise click.Abort()
 
-    with open(ca_cert_path) as fd:
-        ca_cert = pem.loads_certificate(fd.read())
-    click.echo(f"ca: {ca_cert_path}: loaded certificate")
+    if ca_key_path and ca_cert_path:
+        with open(ca_key_path) as fd:
+            ca_key = pem.loads_private_key(fd.read())
+        click.echo(f"ca: {ca_key_path}: loaded key")
+
+        with open(ca_cert_path) as fd:
+            ca_cert = pem.loads_certificate(fd.read())
+        click.echo(f"ca: {ca_cert_path}: loaded certificate")
+
+        certificate_issuer = certificate.LocalTlsCertificateIssuer(
+            ca_key=ca_key,
+            ca_cert=ca_cert,
+        )
+    else:
+        certificate_issuer = certificate.RemoteTlsCertificateIssuer(
+            api_base_url="",  # TODO
+        )
 
     if target == "coordinator":
         is_client = True
@@ -117,11 +133,11 @@ def tls_generate(
         tls_key,
         tls_cert,
     ) = certificate.generate_tls(
-        ca_key=ca_key,
-        ca_cert=ca_cert,
+        certificate_issuer=certificate_issuer,
         common_name=common_name,
+        san_dns=san_dns,
         is_client=is_client,
-        is_server=is_server
+        is_server=is_server,
     )
 
     tls_key_pem = pem.dumps(private_key=tls_key)
@@ -165,7 +181,7 @@ def sign_command(
         signer = sign.KeypairSigner.load(wallet_path)
     else:
         signer = sign.BrowserExtensionSigner()
-    
+
     signed_message = signer.sign_json(message)
 
     if output:

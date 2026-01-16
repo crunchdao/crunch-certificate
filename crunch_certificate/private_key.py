@@ -1,18 +1,16 @@
-from typing import Literal, Union, overload
+from typing import Literal, overload
 
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
 __all__ = [
     "DEFAULT_RSA_KEY_SIZE",
     "PrivateKeyType",
-    "PrivateKey",
     "generate",
 ]
 
 DEFAULT_RSA_KEY_SIZE = 2048
 
 PrivateKeyType = Literal["rsa", "ecdsa"]
-PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey]
 
 
 @overload

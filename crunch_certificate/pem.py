@@ -1,10 +1,13 @@
 
-from typing import Optional, cast, get_args, overload
+from typing import Optional, Union, cast, get_args, overload
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
-from crunch_certificate.private_key import PrivateKey
+PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey]
+PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey]
+Certificate = x509.Certificate
 
 
 @overload
@@ -18,7 +21,15 @@ def dumps(
 @overload
 def dumps(
     *,
-    certificate: x509.Certificate,
+    public_key: PublicKey,
+) -> str:
+    ...
+
+
+@overload
+def dumps(
+    *,
+    certificate: Certificate,
 ) -> str:
     ...
 
@@ -26,7 +37,8 @@ def dumps(
 def dumps(
     *,
     private_key: Optional[PrivateKey] = None,
-    certificate: Optional[x509.Certificate] = None,
+    public_key: Optional[PublicKey] = None,
+    certificate: Optional[Certificate] = None,
 ) -> str:
     if private_key is not None:
         return (
@@ -35,6 +47,16 @@ def dumps(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.PKCS8,
                 encryption_algorithm=serialization.NoEncryption(),
+            )
+            .decode()
+        )
+
+    if public_key is not None:
+        return (
+            public_key
+            .public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.PKCS1,
             )
             .decode()
         )
@@ -52,10 +74,23 @@ def dumps(
 
 def loads_certificate(
     pem_string: str,
-) -> x509.Certificate:
+) -> Certificate:
     return x509.load_pem_x509_certificate(
         pem_string.encode(),
     )
+
+
+def loads_public_key(
+    pem_string: str,
+) -> PublicKey:
+    public_key = serialization.load_pem_public_key(
+        pem_string.encode(),
+    )
+
+    if not isinstance(public_key, get_args(PublicKey)):
+        raise ValueError(f"unsupported key: {type(public_key)}")
+
+    return cast(PublicKey, public_key)
 
 
 def loads_private_key(
